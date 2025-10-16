@@ -7,6 +7,32 @@
 import cv2
 import sys
 import numpy as np
+import math
+
+class Tile:
+    tile_pixel_map = []
+    def __init__(self, pixel_map, x, y):
+        #for _ in range(0,8):
+        #   self.map.append([0]*8)
+        #print(len(pixel_map))
+        #print(len(pixel_map[0]))
+        self.tile_pixel_map = [pixel_map[i][y:(y+8)] for i in range(x, x+8)]
+
+    def __eq__(self, other):
+        return self.tile_pixel_map == other.tile_pixel_map
+
+    def __hash__(self):
+        #return(hash(self.tile_pixel_map))
+        return hash(tuple([tuple(self.tile_pixel_map[i]) for i in range(0, 8)]))
+
+    def to_string():
+        ret_str = ""
+        for x in range(0,8):
+            for y in range(0,8):
+                ret_str += f"{self.tile_pixel_map[x][y]}" # FIXME just a placeholder
+
+    def debug_print():
+        print(self.tile_pixel_map())
 
 def rgb888_to_bgr555_str(rgb):
     #bgr = (rgb[2]>>3, rgb[1]>>3, rgb[0]>>3)
@@ -55,44 +81,116 @@ def draw_palette(pal):
 
     cv2.imshow("Original Palette", pal_image)
 
-def write_palette(pal):
+def write_palette(pal, asm_path):
     # TODO support other sizes
     PAL_WIDTH  = 8
     GRP_HEIGHT = 8
     GRP_COUNT  = 4
 
-    # TODO convert to file write
-    # section header
-    print("    .section .rodata")
-    print("    .align  2")
-    print("    .global bowl_bgPal      @ 512 unsigned chars")
-    print("    .hidden bowl_bgPal") # TODO fix the name
-    print("bowl_bgPal:")
+    with open(asm_path, "w") as file: # FIXME append?
+        # section header
+        file.write("    .section .rodata\n")
+        file.write("    .align  2\n")
+        file.write("    .global bowl_bgPal      @ 512 unsigned chars\n")
+        file.write("    .hidden bowl_bgPal\n") # TODO fix the name
+        file.write("bowl_bgPal:\n")
 
-    pal_colors = list(pal.keys())
-    color_idx = 0
-    for group in range(0, GRP_COUNT):
-        for height in range(0, GRP_HEIGHT):
-            line = "    .hword "
-            for width in range(0, PAL_WIDTH):
-                if color_idx < len(pal_colors):
-                    line += f"0x{rgb888_to_bgr555_str(pal_colors[color_idx])}"
-                else:
-                    line += "0x0000"
-                if width < PAL_WIDTH-1:
-                    line += ","
-                color_idx += 1
-            print(line)
-        print("")
+        pal_colors = list(pal.keys())
+        color_idx = 0
+        for group in range(0, GRP_COUNT):
+            for height in range(0, GRP_HEIGHT):
+                line = "    .hword "
+                for width in range(0, PAL_WIDTH):
+                    if color_idx < len(pal_colors):
+                        line += f"0x{rgb888_to_bgr555_str(pal_colors[color_idx])}"
+                    else:
+                        line += "0x0000"
+                    if width < PAL_WIDTH-1:
+                        line += ","
+                    color_idx += 1
+                file.write(line+"\n")
+            file.write("\n")
 
+def generate_tiles(pixel_map):
+    tile_dict = {}
+    tile_map = []
+    # TODO double check its multiple of 8
+    for y in range(0,len(pixel_map[0]),8):
+        tile_map.append([])
+        for x in range(0,len(pixel_map),8):
+            print(f"{x},{y}")
+            curr_tile = Tile(pixel_map, x, y)
+
+            if curr_tile not in tile_dict:
+                # TODO confirm this checks by value, not by ref
+                tile_dict[curr_tile] = len(tile_dict)
+
+            tile_map[math.floor(y/8)].append(tile_dict[curr_tile])
+    return tile_map, tile_dict
+
+def draw_tile(tile, pal_colors):
+    tile_image = np.zeros((500, 500, 3), dtype=np.uint8) + 255
+    tile_colors = list(pal.keys())
+
+    top_left_corner = (50, 50)
+    bottom_right_corner = (200, 300)
+    rect_size = 50
+    for counter in range(0,64):
+        top_xy = (rect_size*(counter%5), rect_size*int(counter/5))
+        bot_xy = (rect_size*(counter%5)+rect_size, rect_size*int((counter/5))+rect_size)
+        #print(top_xy)
+        #print(bot_xy)
+        #print(tile.tile_pixel_map[counter%5][counter/5])
+        cv2.rectangle(tile_image, top_xy, bot_xy, pal_colors[tile.tile_pixel_map[counter%5][math.floor(counter/5)]], -1) # FIXME need to make second dict for colors: color->index, index->color
+        counter += 1
+
+    cv2.imshow("Tile", tile_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+def write_tile_map(tile_map, asm_path):
+    # TODO support other sizes
+    GRP_WIDTH  =  8
+    GRP_HEIGHT =  8
+    GRP_COUNT  = 16
+
+    with open(asm_path, "w+") as file:
+        # section header
+        file.write("    .section .rodata\n")
+        file.write("    .align  2\n")
+        file.write("    .global bowl_bgMap      @ 2048 unsigned chars\n")
+        file.write("    .hidden bowl_bgMap\n") # TODO fix the name
+        file.write("bowl_bgMap:\n")
+
+        tile_count = 0
+        for group in range(0, GRP_COUNT):
+            for height in range(0, GRP_HEIGHT):
+                line = "    .hword "
+                for width in range(0, GRP_WIDTH):
+                    if tile_count < len(tile_map):
+                        print(tile_map[tile_count])
+                        line += f"0x{tile_map[math.floor(tile_count/160)][tile_count%160]:04x}"
+                    else:
+                        line += "0x0000"
+                    if width < GRP_WIDTH-1:
+                        line += ","
+                    tile_count += 1
+                file.write(line+"\n")
+            file.write("\n")
 
 image_path = sys.argv[1]
+out_path   = sys.argv[2]
 print(image_path)
+print(out_path)
 image = cv2.imread(image_path)
 
 img_map, pal = generate_map(image)
 draw_palette(pal)
-write_palette(pal)
+tile_map, tiles = generate_tiles(img_map)
+draw_tile(list(tiles.keys())[0], pal)
+
+write_tile_map(tile_map, out_path)
+#write_palette(pal, out_path)
 
 cv2.imshow("Original", image)
 cv2.waitKey(0)
