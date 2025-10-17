@@ -11,12 +11,11 @@ import math
 
 class Tile:
     tile_pixel_map = []
-    def __init__(self, pixel_map, x, y):
-        #for _ in range(0,8):
-        #   self.map.append([0]*8)
-        #print(len(pixel_map))
-        #print(len(pixel_map[0]))
-        self.tile_pixel_map = [pixel_map[i][y:(y+8)] for i in range(x, x+8)]
+    def __init__(self, pixel_map, map_x, map_y):
+        for _ in range(0,8):
+           self.tile_pixel_map.append([0]*8)
+        # TODO figure out a less dumb/lazy way.  too late at night
+        self.tile_pixel_map = np.rot90(np.fliplr(np.array([pixel_map[i][map_y:(map_y+8)] for i in range(map_x, map_x+8)])), k=1).tolist()
 
     def __eq__(self, other):
         return self.tile_pixel_map == other.tile_pixel_map
@@ -46,6 +45,7 @@ def rgb888_to_bgr555_str(rgb):
 def generate_map(image):
     img_map = []
     palette = {}
+    palette_rev = {}
 
     for y in range(0,len(image)):
         img_map.append([])
@@ -59,9 +59,13 @@ def generate_map(image):
                 palette[(b, g, r)] = len(palette)
 
             # look up palette ID for color and insert into the map
-            #print(len(palette))
             img_map[y].append(palette[(b, g, r)])
-    return img_map, palette
+    
+    for key in list(palette.keys()):
+        print(f"{key} {type(key)} {palette[key]}")
+        palette_rev[palette[key]] = key
+
+    return img_map, palette, palette_rev
 
 def draw_palette(pal):
     pal_image = np.zeros((500, 500, 3), dtype=np.uint8) + 255
@@ -74,8 +78,6 @@ def draw_palette(pal):
     for color in pal_colors:
         top_xy = (rect_size*(counter%5), rect_size*int(counter/5))
         bot_xy = (rect_size*(counter%5)+rect_size, rect_size*int((counter/5))+rect_size)
-        #print(top_xy)
-        #print(bot_xy)
         cv2.rectangle(pal_image, top_xy, bot_xy, pal_colors[counter], -1)
         counter += 1
 
@@ -118,7 +120,7 @@ def generate_tiles(pixel_map):
     for y in range(0,len(pixel_map[0]),8):
         tile_map.append([])
         for x in range(0,len(pixel_map),8):
-            print(f"{x},{y}")
+            #print(f"{x},{y}")
             curr_tile = Tile(pixel_map, x, y)
 
             if curr_tile not in tile_dict:
@@ -135,13 +137,16 @@ def draw_tile(tile, pal_colors):
     top_left_corner = (50, 50)
     bottom_right_corner = (200, 300)
     rect_size = 50
+    #print(len(tile.tile_pixel_map))
+    #print(len(tile.tile_pixel_map[0]))
     for counter in range(0,64):
-        top_xy = (rect_size*(counter%5), rect_size*int(counter/5))
-        bot_xy = (rect_size*(counter%5)+rect_size, rect_size*int((counter/5))+rect_size)
+        top_xy = (rect_size*(counter%8), rect_size*int(counter/8))
+        bot_xy = (rect_size*(counter%8)+rect_size, rect_size*int((counter/8))+rect_size)
         #print(top_xy)
         #print(bot_xy)
-        #print(tile.tile_pixel_map[counter%5][counter/5])
-        cv2.rectangle(tile_image, top_xy, bot_xy, pal_colors[tile.tile_pixel_map[counter%5][math.floor(counter/5)]], -1) # FIXME need to make second dict for colors: color->index, index->color
+        #print(counter)
+        #print(pal_colors[tile.tile_pixel_map[counter%5][math.floor(counter/5)]])
+        cv2.rectangle(tile_image, top_xy, bot_xy, pal_colors[tile.tile_pixel_map[counter%8][math.floor(counter/8)]], -1)
         counter += 1
 
     cv2.imshow("Tile", tile_image)
@@ -168,7 +173,7 @@ def write_tile_map(tile_map, asm_path):
                 line = "    .hword "
                 for width in range(0, GRP_WIDTH):
                     if tile_count < len(tile_map):
-                        print(tile_map[tile_count])
+                        #print(tile_map[tile_count])
                         line += f"0x{tile_map[math.floor(tile_count/160)][tile_count%160]:04x}"
                     else:
                         line += "0x0000"
@@ -184,14 +189,19 @@ print(image_path)
 print(out_path)
 image = cv2.imread(image_path)
 
-img_map, pal = generate_map(image)
+img_map, pal, pal_rev = generate_map(image)
 draw_palette(pal)
 tile_map, tiles = generate_tiles(img_map)
-draw_tile(list(tiles.keys())[0], pal)
+draw_tile(list(tiles.keys())[33], pal_rev)
 
-write_tile_map(tile_map, out_path)
+#temp_count = 0
+#for tile in list(tiles.keys()):
+#    print(temp_count)
+#    draw_tile(tile, pal_rev)
+print(f"Tile count: {len(list(tiles.keys()))}")
+#write_tile_map(tile_map, out_path)
 #write_palette(pal, out_path)
 
-cv2.imshow("Original", image)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+#cv2.imshow("Original", image)
+#cv2.waitKey(0)
+#cv2.destroyAllWindows()
