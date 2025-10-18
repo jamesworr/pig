@@ -62,7 +62,7 @@ def generate_map(image):
             img_map[y].append(palette[(b, g, r)])
     
     for key in list(palette.keys()):
-        print(f"{key} {type(key)} {palette[key]}")
+        #print(f"{key} {type(key)} {palette[key]}")
         palette_rev[palette[key]] = key
 
     return img_map, palette, palette_rev
@@ -89,7 +89,7 @@ def write_palette(pal, asm_path):
     GRP_HEIGHT = 8
     GRP_COUNT  = 4
 
-    with open(asm_path, "w") as file: # FIXME append?
+    with open(asm_path, "a") as file: # FIXME append?
         # section header
         file.write("    .section .rodata\n")
         file.write("    .align  2\n")
@@ -158,8 +158,9 @@ def write_tile_map(tile_map, asm_path):
     GRP_WIDTH  =  8
     GRP_HEIGHT =  8
     GRP_COUNT  = 16
-
-    with open(asm_path, "w+") as file:
+    
+    print(asm_path)
+    with open(asm_path, "w") as file:
         # section header
         file.write("    .section .rodata\n")
         file.write("    .align  2\n")
@@ -168,15 +169,50 @@ def write_tile_map(tile_map, asm_path):
         file.write("bowl_bgMap:\n")
 
         tile_count = 0
+        print(len(tile_map))
+        print(len(tile_map[0]))
         for group in range(0, GRP_COUNT):
             for height in range(0, GRP_HEIGHT):
                 line = "    .hword "
                 for width in range(0, GRP_WIDTH):
-                    if tile_count < len(tile_map):
+                    if tile_count < (len(tile_map) * len(tile_map[0])):
                         #print(tile_map[tile_count])
-                        line += f"0x{tile_map[math.floor(tile_count/160)][tile_count%160]:04x}"
+                        line += f"0x{tile_map[math.floor(tile_count/len(tile_map[0]))][tile_count%len(tile_map[0])]:04x}" # FIXME dont hardcode division
                     else:
                         line += "0x0000"
+                    if width < GRP_WIDTH-1:
+                        line += ","
+                    tile_count += 1
+                file.write(line+"\n")
+            file.write("\n")
+
+def write_tile_data(tiles, asm_path):
+    # TODO support other sizes
+    GRP_WIDTH  =  8
+    GRP_HEIGHT =  8
+    GRP_COUNT  = 16
+    
+    print(asm_path)
+    with open(asm_path, "w") as file:
+        # section header
+        file.write("    .section .rodata\n")
+        file.write("    .align  2\n")
+        file.write("    .global bowl_bgTiles        @ 11840 unsigned chars\n")
+        file.write("    .hidden bowl_bgTiles\n") # TODO fix the name
+        file.write("bowl_bgTiles:\n")
+
+        tile_count = 0
+        print(len(tiles))
+        print(len(tiles[0]))
+        for group in range(0, GRP_COUNT):
+            for height in range(0, GRP_HEIGHT):
+                line = "    .word "
+                for width in range(0, GRP_WIDTH):
+                    if tile_count < (len(tiles) * len(tiles[0])):
+                        #print(tiles[tile_count])
+                        line += f"0x{tiles[math.floor(tile_count/len(tiles[0]))][tile_count%len(tiles[0])]:04x}" # FIXME
+                    else:
+                        line += "0x00000000"
                     if width < GRP_WIDTH-1:
                         line += ","
                     tile_count += 1
@@ -199,8 +235,8 @@ draw_tile(list(tiles.keys())[33], pal_rev)
 #    print(temp_count)
 #    draw_tile(tile, pal_rev)
 print(f"Tile count: {len(list(tiles.keys()))}")
-#write_tile_map(tile_map, out_path)
-#write_palette(pal, out_path)
+write_tile_map(tile_map, out_path)
+write_palette(pal, out_path)
 
 #cv2.imshow("Original", image)
 #cv2.waitKey(0)
