@@ -33,6 +33,15 @@ class Tile:
     def debug_print():
         print(self.tile_pixel_map())
 
+def pig_picture():
+    print(r"                      ---------- ")
+    print(r"      ------   ----  (          )")
+    print(r"     /      \-/ \/o\ (   Oink   )")
+    print(r"    /            --: (          )")
+    print(r"    \           /    /----------)")
+    print(r"     \-  ---  -/    /            ")
+    print(r"       | |  | |                  ")
+
 def rgb888_to_bgr555_str(rgb):
     #bgr = (rgb[2]>>3, rgb[1]>>3, rgb[0]>>3)
     bgr = (rgb[0]>>3)<<10 | (rgb[1]>>3)<<5 | (rgb[2]>>3)
@@ -159,8 +168,8 @@ def write_tile_map(tile_map, asm_path):
     GRP_HEIGHT =  8
     GRP_COUNT  = 16
     
-    print(asm_path)
-    with open(asm_path, "w") as file:
+   # print(asm_path)
+    with open(asm_path, "a") as file:
         # section header
         file.write("    .section .rodata\n")
         file.write("    .align  2\n")
@@ -169,15 +178,15 @@ def write_tile_map(tile_map, asm_path):
         file.write("bowl_bgMap:\n")
 
         tile_count = 0
-        print(len(tile_map))
-        print(len(tile_map[0]))
+        #print(len(tile_map))
+        #print(len(tile_map[0]))
         for group in range(0, GRP_COUNT):
             for height in range(0, GRP_HEIGHT):
                 line = "    .hword "
                 for width in range(0, GRP_WIDTH):
                     if tile_count < (len(tile_map) * len(tile_map[0])):
                         #print(tile_map[tile_count])
-                        line += f"0x{tile_map[math.floor(tile_count/len(tile_map[0]))][tile_count%len(tile_map[0])]:04x}" # FIXME dont hardcode division
+                        line += f"0x{tile_map[math.floor(tile_count/len(tile_map[0]))][tile_count%len(tile_map[0])]:04x}"
                     else:
                         line += "0x0000"
                     if width < GRP_WIDTH-1:
@@ -192,7 +201,7 @@ def write_tile_data(tiles, asm_path):
     GRP_HEIGHT =  8
     GRP_COUNT  = 16
     
-    print(asm_path)
+    #print(asm_path)
     with open(asm_path, "w") as file:
         # section header
         file.write("    .section .rodata\n")
@@ -201,40 +210,49 @@ def write_tile_data(tiles, asm_path):
         file.write("    .hidden bowl_bgTiles\n") # TODO fix the name
         file.write("bowl_bgTiles:\n")
 
+        flat_tiles = []
+        for tile in tiles:
+            for y in range(0, 8, 2):
+                for x in range(0, 8, 4):
+                    num = (tile.tile_pixel_map[x+3][y]<<24) \
+                        + (tile.tile_pixel_map[x+2][y]<<16) \
+                        + (tile.tile_pixel_map[x+1][y]<<8 ) \
+                        +  tile.tile_pixel_map[x][y]
+                    flat_tiles.append(num)
+
         tile_count = 0
-        print(len(tiles))
-        print(len(tiles[0]))
-        for group in range(0, GRP_COUNT):
-            for height in range(0, GRP_HEIGHT):
-                line = "    .word "
-                for width in range(0, GRP_WIDTH):
-                    if tile_count < (len(tiles) * len(tiles[0])):
-                        #print(tiles[tile_count])
-                        line += f"0x{tiles[math.floor(tile_count/len(tiles[0]))][tile_count%len(tiles[0])]:04x}" # FIXME
-                    else:
-                        line += "0x00000000"
-                    if width < GRP_WIDTH-1:
-                        line += ","
-                    tile_count += 1
-                file.write(line+"\n")
-            file.write("\n")
+        for _ in range(0, math.ceil(len(flat_tiles)/8)):
+            line = "    .word "
+            for width in range(0, GRP_WIDTH):
+                if tile_count < len(flat_tiles):
+                    #print(tile_map[tile_count])
+                    line += f"0x{flat_tiles[tile_count]:08x}"
+                else:
+                    line += "0x00000000"
+                if width < GRP_WIDTH-1:
+                    line += ","
+                tile_count += 1
+            file.write(line+"\n")
+        file.write("\n")
 
 image_path = sys.argv[1]
 out_path   = sys.argv[2]
 print(image_path)
 print(out_path)
+pig_picture()
 image = cv2.imread(image_path)
 
 img_map, pal, pal_rev = generate_map(image)
 draw_palette(pal)
 tile_map, tiles = generate_tiles(img_map)
-draw_tile(list(tiles.keys())[33], pal_rev)
+#draw_tile(list(tiles.keys())[33], pal_rev)
 
 #temp_count = 0
 #for tile in list(tiles.keys()):
 #    print(temp_count)
 #    draw_tile(tile, pal_rev)
-print(f"Tile count: {len(list(tiles.keys()))}")
+#print(f"Tile count: {len(list(tiles.keys()))}")
+write_tile_data(tiles, out_path)
 write_tile_map(tile_map, out_path)
 write_palette(pal, out_path)
 
