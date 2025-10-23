@@ -168,7 +168,7 @@ def write_tile_map(tile_map, asm_path):
     GRP_HEIGHT =  8
     GRP_COUNT  = 16
     
-   # print(asm_path)
+    #print(asm_path)
     with open(asm_path, "a") as file:
         # section header
         file.write("    .section .rodata\n")
@@ -212,7 +212,7 @@ def write_tile_data(tiles, asm_path):
 
         flat_tiles = []
         for tile in tiles:
-            for y in range(0, 8, 2):
+            for y in range(0, 8):
                 for x in range(0, 8, 4):
                     num = (tile.tile_pixel_map[x+3][y]<<24) \
                         + (tile.tile_pixel_map[x+2][y]<<16) \
@@ -220,6 +220,7 @@ def write_tile_data(tiles, asm_path):
                         +  tile.tile_pixel_map[x][y]
                     flat_tiles.append(num)
 
+        #print(f"flat tile count: {len(flat_tiles)}")
         tile_count = 0
         for _ in range(0, math.ceil(len(flat_tiles)/8)):
             line = "    .word "
