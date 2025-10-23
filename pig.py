@@ -122,21 +122,22 @@ def write_palette(pal, asm_path):
                 file.write(line+"\n")
             file.write("\n")
 
-def generate_tiles(pixel_map):
+def generate_tiles(pixel_map, pal):
     tile_dict = {}
     tile_map = []
     # TODO double check its multiple of 8
-    for y in range(0,len(pixel_map[0]),8):
+    for x in range(0,len(pixel_map),8):
         tile_map.append([])
-        for x in range(0,len(pixel_map),8):
+        for y in range(0,len(pixel_map[0]),8):
             #print(f"{x},{y}")
             curr_tile = Tile(pixel_map, x, y)
+            #draw_tile(curr_tile, pal)
 
             if curr_tile not in tile_dict:
                 # TODO confirm this checks by value, not by ref
                 tile_dict[curr_tile] = len(tile_dict)
 
-            tile_map[math.floor(y/8)].append(tile_dict[curr_tile])
+            tile_map[math.floor(x/8)].append(tile_dict[curr_tile])
     return tile_map, tile_dict
 
 def draw_tile(tile, pal_colors):
@@ -245,7 +246,7 @@ image = cv2.imread(image_path)
 
 img_map, pal, pal_rev = generate_map(image)
 draw_palette(pal)
-tile_map, tiles = generate_tiles(img_map)
+tile_map, tiles = generate_tiles(img_map, pal_rev)
 #draw_tile(list(tiles.keys())[33], pal_rev)
 
 #temp_count = 0
