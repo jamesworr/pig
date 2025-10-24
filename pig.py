@@ -195,6 +195,7 @@ def write_tile_map(tile_map, asm_path):
                     tile_count += 1
                 file.write(line+"\n")
             file.write("\n")
+        print(f"Tile map count: {tile_count}")
 
 def write_tile_data(tiles, asm_path):
     # TODO support other sizes
@@ -203,6 +204,7 @@ def write_tile_data(tiles, asm_path):
     GRP_COUNT  = 16
     
     #print(asm_path)
+    print(len(tiles))
     with open(asm_path, "w") as file:
         # section header
         file.write("    .section .rodata\n")
@@ -221,7 +223,7 @@ def write_tile_data(tiles, asm_path):
                         +  tile.tile_pixel_map[x][y]
                     flat_tiles.append(num)
 
-        #print(f"flat tile count: {len(flat_tiles)}")
+        print(f"flat tile count: {len(flat_tiles)}")
         tile_count = 0
         for _ in range(0, math.ceil(len(flat_tiles)/8)):
             line = "    .word "
@@ -236,6 +238,7 @@ def write_tile_data(tiles, asm_path):
                 tile_count += 1
             file.write(line+"\n")
         file.write("\n")
+        print(f"tile_count: {tile_count}")
 
 image_path = sys.argv[1]
 out_path   = sys.argv[2]
@@ -248,15 +251,18 @@ img_map, pal, pal_rev = generate_map(image)
 draw_palette(pal)
 tile_map, tiles = generate_tiles(img_map, pal_rev)
 #draw_tile(list(tiles.keys())[33], pal_rev)
+draw_tile(list(tiles.keys())[-1], pal_rev)
 
 #temp_count = 0
 #for tile in list(tiles.keys()):
 #    print(temp_count)
 #    draw_tile(tile, pal_rev)
-#print(f"Tile count: {len(list(tiles.keys()))}")
 write_tile_data(tiles, out_path)
 write_tile_map(tile_map, out_path)
 write_palette(pal, out_path)
+
+# TODO need to generate the header
+# TODO pad out the map to match GBA map size (32x32, 64x32, etc)
 
 #cv2.imshow("Original", image)
 #cv2.waitKey(0)
