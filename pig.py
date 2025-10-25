@@ -103,7 +103,7 @@ def write_palette(pal, asm_path, filename):
         # section header
         file.write("    .section .rodata\n")
         file.write("    .align  2\n")
-        file.write(f"    .global {filename}Pal      @ 512 unsigned chars\n")
+        file.write(f"    .global {filename}Pal\n")
         file.write(f"    .hidden {filename}Pal\n") # TODO fix the name
         file.write(f"{filename}Pal:\n")
 
@@ -175,7 +175,7 @@ def write_tile_map(tile_map, asm_path, x_tile_count, y_tile_count, filename):
         # section header
         file.write("    .section .rodata\n")
         file.write("    .align  2\n")
-        file.write(f"    .global {filename}Map      @ 2048 unsigned chars\n")
+        file.write(f"    .global {filename}Map\n")
         file.write(f"    .hidden {filename}Map\n") # TODO fix the name
         file.write(f"{filename}Map:\n")
 
@@ -210,7 +210,7 @@ def write_tile_data(tiles, asm_path, filename):
         # section header
         file.write("    .section .rodata\n")
         file.write("    .align  2\n")
-        file.write(f"    .global {filename}Tiles        @ 11840 unsigned chars\n")
+        file.write(f"    .global {filename}Tiles\n")
         file.write(f"    .hidden {filename}Tiles\n") # TODO fix the name
         file.write(f"{filename}Tiles:\n")
 
