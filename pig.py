@@ -103,9 +103,9 @@ def write_palette(pal, asm_path, filename):
         # section header
         file.write("    .section .rodata\n")
         file.write("    .align  2\n")
-        file.write(f"    .global {filename}Pal\n")
-        file.write(f"    .hidden {filename}Pal\n") # TODO fix the name
-        file.write(f"{filename}Pal:\n")
+        file.write(f"    .global {filename}_pal\n")
+        file.write(f"    .hidden {filename}_pal\n") # TODO fix the name
+        file.write(f"{filename}_pal:\n")
 
         pal_colors = list(pal.keys())
         color_idx = 0
@@ -175,9 +175,9 @@ def write_tile_map(tile_map, asm_path, x_tile_count, y_tile_count, filename):
         # section header
         file.write("    .section .rodata\n")
         file.write("    .align  2\n")
-        file.write(f"    .global {filename}Map\n")
-        file.write(f"    .hidden {filename}Map\n") # TODO fix the name
-        file.write(f"{filename}Map:\n")
+        file.write(f"    .global {filename}_map\n")
+        file.write(f"    .hidden {filename}_map\n") # TODO fix the name
+        file.write(f"{filename}_map:\n")
 
         line_count = 0
         line = "    .hword "
@@ -210,9 +210,9 @@ def write_tile_data(tiles, asm_path, filename):
         # section header
         file.write("    .section .rodata\n")
         file.write("    .align  2\n")
-        file.write(f"    .global {filename}Tiles\n")
-        file.write(f"    .hidden {filename}Tiles\n") # TODO fix the name
-        file.write(f"{filename}Tiles:\n")
+        file.write(f"    .global {filename}_tiles\n")
+        file.write(f"    .hidden {filename}_tiles\n") # TODO fix the name
+        file.write(f"{filename}_tiles:\n")
 
         flat_tiles = []
         for tile in tiles:
@@ -245,12 +245,12 @@ def write_tile_data(tiles, asm_path, filename):
 def write_header(tile_count, map_count, pal_count, header_path, filename):
     with open(header_path+"/"+filename+".h", "w") as file: # FIXME
         # add ifndef guards
-        file.write(f"#define {filename}TilesLen {tile_count*4}\n") # word, 4 bytes
-        file.write(f"extern const unsigned int {filename}Tiles[{tile_count}];\n")
-        file.write(f"#define {filename}MapLen {map_count*2}\n")
-        file.write(f"extern const unsigned short {filename}Map[{map_count}];\n")
-        file.write(f"#define {filename}PalLen {pal_count*2}\n")
-        file.write(f"extern const unsigned short {filename}Pal[{pal_count}];\n")
+        file.write(f"#define {filename}_tiles_len {tile_count*4}\n") # word, 4 bytes
+        file.write(f"extern const unsigned int {filename}_tiles[{tile_count}];\n")
+        file.write(f"#define {filename}_map_len {map_count*2}\n")
+        file.write(f"extern const unsigned short {filename}_map[{map_count}];\n")
+        file.write(f"#define {filename}_pal_len {pal_count*2}\n")
+        file.write(f"extern const unsigned short {filename}_pal[{pal_count}];\n")
 
 image_path = sys.argv[1]
 filename   = os.path.basename(image_path)[0:-4]
