@@ -99,12 +99,12 @@ def write_palette(pal, asm_path, filename):
     GRP_HEIGHT = 8
     GRP_COUNT  = 4
 
-    with open(asm_path+"/"+filename+".s", "a") as file: # FIXME append?
+    with open(asm_path+"/"+filename+".s", "a") as file:
         # section header
         file.write("    .section .rodata\n")
         file.write("    .align  2\n")
         file.write(f"    .global {filename}_pal\n")
-        file.write(f"    .hidden {filename}_pal\n") # TODO fix the name
+        file.write(f"    .hidden {filename}_pal\n")
         file.write(f"{filename}_pal:\n")
 
         pal_colors = list(pal.keys())
@@ -135,7 +135,6 @@ def generate_tiles(pixel_map, pal):
             #draw_tile(curr_tile, pal)
 
             if curr_tile not in tile_dict:
-                # TODO confirm this checks by value, not by ref
                 tile_dict[curr_tile] = len(tile_dict)
 
             tile_map[math.floor(x/8)].append(tile_dict[curr_tile])
@@ -148,15 +147,9 @@ def draw_tile(tile, pal_colors):
     top_left_corner = (50, 50)
     bottom_right_corner = (200, 300)
     rect_size = 50
-    #print(len(tile.tile_pixel_map))
-    #print(len(tile.tile_pixel_map[0]))
     for counter in range(0,64):
         top_xy = (rect_size*(counter%8), rect_size*int(counter/8))
         bot_xy = (rect_size*(counter%8)+rect_size, rect_size*int((counter/8))+rect_size)
-        #print(top_xy)
-        #print(bot_xy)
-        #print(counter)
-        #print(pal_colors[tile.tile_pixel_map[counter%5][math.floor(counter/5)]])
         cv2.rectangle(tile_image, top_xy, bot_xy, pal_colors[tile.tile_pixel_map[counter%8][math.floor(counter/8)]], -1)
         counter += 1
 
@@ -170,13 +163,12 @@ def write_tile_map(tile_map, asm_path, x_tile_count, y_tile_count, filename):
     GRP_HEIGHT =  8
     GRP_COUNT  = 16
     
-    #print(asm_path)
     with open(asm_path+"/"+filename+".s", "a") as file:
         # section header
         file.write("    .section .rodata\n")
         file.write("    .align  2\n")
         file.write(f"    .global {filename}_map\n")
-        file.write(f"    .hidden {filename}_map\n") # TODO fix the name
+        file.write(f"    .hidden {filename}_map\n")
         file.write(f"{filename}_map:\n")
 
         line_count = 0
@@ -204,14 +196,12 @@ def write_tile_data(tiles, asm_path, filename):
     GRP_HEIGHT =  8
     GRP_COUNT  = 16
     
-    #print(asm_path)
-    #print(len(tiles))
     with open(asm_path+"/"+filename+".s", "w") as file:
         # section header
         file.write("    .section .rodata\n")
         file.write("    .align  2\n")
         file.write(f"    .global {filename}_tiles\n")
-        file.write(f"    .hidden {filename}_tiles\n") # TODO fix the name
+        file.write(f"    .hidden {filename}_tiles\n")
         file.write(f"{filename}_tiles:\n")
 
         flat_tiles = []
@@ -243,13 +233,13 @@ def write_tile_data(tiles, asm_path, filename):
         return tile_count
 
 def write_header(tile_count, map_count, pal_count, header_path, filename):
-    with open(header_path+"/"+filename+".h", "w") as file: # FIXME
-        # add ifndef guards
+    with open(header_path+"/"+filename+".h", "w") as file:
+        # TODO add ifndef guards
         file.write(f"#define {filename}_tiles_len {tile_count*4}\n") # word, 4 bytes
         file.write(f"extern const unsigned int {filename}_tiles[{tile_count}];\n")
-        file.write(f"#define {filename}_map_len {map_count*2}\n")
+        file.write(f"#define {filename}_map_len {map_count*2}\n") # half word, 2 bytes
         file.write(f"extern const unsigned short {filename}_map[{map_count}];\n")
-        file.write(f"#define {filename}_pal_len {pal_count*2}\n")
+        file.write(f"#define {filename}_pal_len {pal_count*2}\n") # half word, 2 bytes
         file.write(f"extern const unsigned short {filename}_pal[{pal_count}];\n")
 
 image_path = sys.argv[1]
@@ -258,9 +248,9 @@ if len(sys.argv) > 2:
     out_path = sys.argv[2]
 else:
     out_path = "./"
-print(image_path)
-print(out_path)
-print(filename)
+#print(image_path)
+#print(out_path)
+#print(filename)
 pig_picture()
 image = cv2.imread(image_path)
 
@@ -270,8 +260,6 @@ y_tile_count = 32
 img_map, pal, pal_rev = generate_map(image)
 draw_palette(pal)
 tile_map, tiles = generate_tiles(img_map, pal_rev)
-#draw_tile(list(tiles.keys())[33], pal_rev)
-#draw_tile(list(tiles.keys())[-1], pal_rev)
 
 #temp_count = 0
 #for tile in list(tiles.keys()):
@@ -289,6 +277,3 @@ write_header(tile_count, map_count, pal_count, out_path, filename)
 
 # TODO pad out the map to match GBA map size (32x32, 64x32, etc)
 
-#cv2.imshow("Original", image)
-#cv2.waitKey(0)
-#cv2.destroyAllWindows()
