@@ -163,7 +163,7 @@ def draw_tile(tile, pal_colors):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-def write_tile_map(tile_map, asm_path):
+def write_tile_map(tile_map, asm_path, x_tile_count, y_tile_count):
     # TODO support other sizes
     GRP_WIDTH  =  8
     GRP_HEIGHT =  8
@@ -178,24 +178,24 @@ def write_tile_map(tile_map, asm_path):
         file.write("    .hidden bowl_bgMap\n") # TODO fix the name
         file.write("bowl_bgMap:\n")
 
-        tile_count = 0
-        #print(len(tile_map))
-        #print(len(tile_map[0]))
-        for group in range(0, GRP_COUNT):
-            for height in range(0, GRP_HEIGHT):
-                line = "    .hword "
-                for width in range(0, GRP_WIDTH):
-                    if tile_count < (len(tile_map) * len(tile_map[0])):
-                        #print(tile_map[tile_count])
-                        line += f"0x{tile_map[math.floor(tile_count/len(tile_map[0]))][tile_count%len(tile_map[0])]:04x}"
-                    else:
-                        line += "0x0000"
-                    if width < GRP_WIDTH-1:
-                        line += ","
-                    tile_count += 1
-                file.write(line+"\n")
-            file.write("\n")
-        print(f"Tile map count: {tile_count}")
+        line_count = 0
+        line = "    .hword "
+        for x in range(0, x_tile_count):
+            for y in range(0, y_tile_count):
+                #print(f"{x},{y}")
+                if line_count >= 8:
+                    file.write(line+"\n")
+                    line = "    .hword "
+                    line_count = 0
+                if x < len(tile_map) and y < len(tile_map[0]):
+                    line += f"0x{tile_map[x][y]:04x}"
+                else:
+                    line += "0x0000"
+                if line_count < 7:
+                    line += ","
+                line_count += 1
+
+        file.write(line+"\n") # write final line
 
 def write_tile_data(tiles, asm_path):
     # TODO support other sizes
@@ -204,7 +204,7 @@ def write_tile_data(tiles, asm_path):
     GRP_COUNT  = 16
     
     #print(asm_path)
-    print(len(tiles))
+    #print(len(tiles))
     with open(asm_path, "w") as file:
         # section header
         file.write("    .section .rodata\n")
@@ -223,7 +223,7 @@ def write_tile_data(tiles, asm_path):
                         +  tile.tile_pixel_map[x][y]
                     flat_tiles.append(num)
 
-        print(f"flat tile count: {len(flat_tiles)}")
+        #print(f"flat tile count: {len(flat_tiles)}")
         tile_count = 0
         for _ in range(0, math.ceil(len(flat_tiles)/8)):
             line = "    .word "
@@ -238,7 +238,18 @@ def write_tile_data(tiles, asm_path):
                 tile_count += 1
             file.write(line+"\n")
         file.write("\n")
-        print(f"tile_count: {tile_count}")
+       # print(f"tile_count: {tile_count}")
+        return tile_count
+
+def write_header(tile_count, map_count, pal_count):
+    with open("test.h", "w") as file: # FIXME
+        # add ifndef guards
+        file.write(f"#define bowl_bgTilesLen {tile_count*4}\n") # word, 4 bytes
+        file.write(f"extern const unsigned int bowl_bgTiles[{tile_count}];\n")
+        file.write(f"#define bowl_bgMapLen {map_count*2}\n")
+        file.write(f"extern const unsigned short bowl_bgMap[{map_count}];\n")
+        file.write(f"#define bowl_bgPalLen {pal_count*2}\n")
+        file.write(f"extern const unsigned short bowl_bgPal[{pal_count}];\n")
 
 image_path = sys.argv[1]
 out_path   = sys.argv[2]
@@ -247,21 +258,29 @@ print(out_path)
 pig_picture()
 image = cv2.imread(image_path)
 
+x_tile_count = 32 # TODO take from cli arg
+y_tile_count = 32
+
 img_map, pal, pal_rev = generate_map(image)
 draw_palette(pal)
 tile_map, tiles = generate_tiles(img_map, pal_rev)
 #draw_tile(list(tiles.keys())[33], pal_rev)
-draw_tile(list(tiles.keys())[-1], pal_rev)
+#draw_tile(list(tiles.keys())[-1], pal_rev)
 
 #temp_count = 0
 #for tile in list(tiles.keys()):
 #    print(temp_count)
 #    draw_tile(tile, pal_rev)
-write_tile_data(tiles, out_path)
-write_tile_map(tile_map, out_path)
+tile_count = write_tile_data(tiles, out_path)
+write_tile_map(tile_map, out_path, x_tile_count, y_tile_count)
 write_palette(pal, out_path)
 
 # TODO need to generate the header
+map_count = x_tile_count * y_tile_count
+pal_count = len(pal_rev)
+write_header(tile_count, map_count, pal_count)
+
+
 # TODO pad out the map to match GBA map size (32x32, 64x32, etc)
 
 #cv2.imshow("Original", image)
