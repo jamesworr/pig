@@ -158,11 +158,7 @@ def draw_tile(tile, pal_colors):
     cv2.destroyAllWindows()
 
 def write_tile_map(tile_map, asm_path, x_tile_count, y_tile_count, filename):
-    # TODO support other sizes
-    GRP_WIDTH  =  8
-    GRP_HEIGHT =  8
-    GRP_COUNT  = 16
-    
+
     with open(asm_path+"/"+filename+".s", "a") as file:
         # section header
         file.write("    .section .rodata\n")
@@ -193,8 +189,6 @@ def write_tile_map(tile_map, asm_path, x_tile_count, y_tile_count, filename):
 def write_tile_data(tiles, asm_path, filename):
     # TODO support other sizes
     GRP_WIDTH  =  8
-    GRP_HEIGHT =  8
-    GRP_COUNT  = 16
     
     with open(asm_path+"/"+filename+".s", "w") as file:
         # section header
@@ -269,11 +263,11 @@ tile_count = write_tile_data(tiles, out_path, filename)
 write_tile_map(tile_map, out_path, x_tile_count, y_tile_count, filename)
 write_palette(pal, out_path, filename)
 
-# TODO need to generate the header
 map_count = x_tile_count * y_tile_count
 pal_count = len(pal_rev)
 write_header(tile_count, map_count, pal_count, out_path, filename)
 
 
-# TODO pad out the map to match GBA map size (32x32, 64x32, etc)
+# TODO support other GBA map size (32x32, 64x32, etc) on CLI args
+# TODO switch to argparse
 
