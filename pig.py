@@ -9,6 +9,7 @@ import sys
 import numpy as np
 import math
 import os
+import argparse
 
 class Tile:
     tile_pixel_map = []
@@ -94,7 +95,7 @@ def draw_palette(pal):
     cv2.imshow("Original Palette", pal_image)
 
 def write_palette(pal, asm_path, filename):
-    # TODO support other sizes
+    # TODO quit writing fixed size
     PAL_WIDTH  = 8
     GRP_HEIGHT = 8
     GRP_COUNT  = 4
@@ -236,20 +237,28 @@ def write_header(tile_count, map_count, pal_count, header_path, filename):
         file.write(f"#define {filename}_pal_len {pal_count*2}\n") # half word, 2 bytes
         file.write(f"extern const unsigned short {filename}_pal[{pal_count}];\n")
 
-image_path = sys.argv[1]
-filename   = os.path.basename(image_path)[0:-4]
-if len(sys.argv) > 2:
-    out_path = sys.argv[2]
-else:
-    out_path = "./"
-#print(image_path)
-#print(out_path)
-#print(filename)
+# arguments
+parser = argparse.ArgumentParser(description="PIG")
+parser.add_argument("image_path", type=str, help="Image to feed the pig") # required
+parser.add_argument("--out_path", "-o", type=str, default="./", help="Output directory for the source files")
+parser.add_argument("--x_tile_count", "-x", type=int, default=32, help="Output tile X dimension")
+parser.add_argument("--y_tile_count", "-y", type=int, default=32, help="Output tile Y dimension")
+parser.add_argument("--bg", "-b", action="store_true", help="Background Tile Mode") # TODO use me
+parser.add_argument("--sprite", "-s", action="store_true", help="Sprite Tile Mode") # TODO use me
+args = parser.parse_args()
+
+image_path   = args.image_path
+filename     = os.path.basename(image_path)[0:-4]
+out_path     = args.out_path
+x_tile_count = args.x_tile_count
+y_tile_count = args.y_tile_count
+
+if args.bg and args.sprite:
+    print("Can't have both background and sprite modes selected. Try again :(")
+    quit(0)
+
 pig_picture()
 image = cv2.imread(image_path)
-
-x_tile_count = 32 # TODO take from cli arg
-y_tile_count = 32
 
 img_map, pal, pal_rev = generate_map(image)
 draw_palette(pal)
@@ -269,5 +278,6 @@ write_header(tile_count, map_count, pal_count, out_path, filename)
 
 
 # TODO support other GBA map size (32x32, 64x32, etc) on CLI args
-# TODO switch to argparse
+# TODO implement sprite mode
+# TODO add unit tests using the test pattern
 
