@@ -3,7 +3,8 @@
 Convert 24bit color images into GBA tilemaps and palettes.  Allows for visualization of palette colors and tiles.
 
 # Usage
-usage: `pig.py [-h] [--out_path OUT_PATH] [--x_tile_count X_TILE_COUNT] [--y_tile_count Y_TILE_COUNT] [--bg] [--sprite] image_path`
+```
+pig.py [-h] [--out_path OUT_PATH] [--x_tile_count X_TILE_COUNT] [--y_tile_count Y_TILE_COUNT] [--bg] [--sprite] image_path
 
 positional arguments:
   image_path            Image to feed the pig
@@ -18,5 +19,5 @@ options:
                         Output tile Y dimension
   --bg, -b              Background Tile Mode
   --sprite, -s          Sprite Tile Mode
-
+```
 **Subject to change with future improvements
