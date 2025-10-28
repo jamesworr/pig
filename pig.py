@@ -253,8 +253,8 @@ out_path     = args.out_path
 x_tile_count = args.x_tile_count
 y_tile_count = args.y_tile_count
 
-if args.bg and args.sprite:
-    print("Can't have both background and sprite modes selected. Try again :(")
+if not (args.bg ^ args.sprite):
+    print("Must select EITHER  background or sprite mode. Not both or none. Try again :(")
     quit(0)
 
 pig_picture()
