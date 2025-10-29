@@ -278,6 +278,6 @@ write_header(tile_count, map_count, pal_count, out_path, filename)
 
 
 # TODO support other GBA map size (32x32, 64x32, etc) on CLI args
-# TODO implement sprite mode
+# TODO implement sprite mode, skip tile map, dont discard repeated tiles in tile generation
 # TODO add unit tests using the test pattern
 
