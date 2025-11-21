@@ -127,6 +127,7 @@ def write_palette(pal, asm_path, filename):
 def generate_tiles(pixel_map, pal):
     tile_dict = {}
     tile_map = []
+    sprite_tiles = []
     # TODO double check its multiple of 8
     for x in range(0,len(pixel_map),8):
         tile_map.append([])
@@ -138,8 +139,13 @@ def generate_tiles(pixel_map, pal):
             if curr_tile not in tile_dict:
                 tile_dict[curr_tile] = len(tile_dict)
 
+            # map for bg mode
             tile_map[math.floor(x/8)].append(tile_dict[curr_tile])
-    return tile_map, tile_dict
+
+            # complete, no de-dup tile data for sprites
+            # don't want to skip repeat tiles since no maps
+            sprite_tiles.append(curr_tile)
+    return tile_map, tile_dict, sprite_tiles
 
 def draw_tile(tile, pal_colors):
     tile_image = np.zeros((500, 500, 3), dtype=np.uint8) + 255
@@ -239,22 +245,21 @@ def write_header(tile_count, map_count, pal_count, header_path, filename):
 
 # arguments
 parser = argparse.ArgumentParser(description="PIG")
+parser.add_argument("mode", type=str, help="sprite or bg mode") # required
 parser.add_argument("image_path", type=str, help="Image to feed the pig") # required
 parser.add_argument("--out_path", "-o", type=str, default="./", help="Output directory for the source files")
-parser.add_argument("--x_tile_count", "-x", type=int, default=32, help="Output tile X dimension")
-parser.add_argument("--y_tile_count", "-y", type=int, default=32, help="Output tile Y dimension")
-parser.add_argument("--bg", "-b", action="store_true", help="Background Tile Mode") # TODO use me
-parser.add_argument("--sprite", "-s", action="store_true", help="Sprite Tile Mode") # TODO use me
+parser.add_argument("--x_tiles", "-x", type=int, default=32, help="Output tile X dimension")
+parser.add_argument("--y_tiles", "-y", type=int, default=32, help="Output tile Y dimension")
 args = parser.parse_args()
 
 image_path   = args.image_path
 filename     = os.path.basename(image_path)[0:-4]
 out_path     = args.out_path
-x_tile_count = args.x_tile_count
-y_tile_count = args.y_tile_count
+x_tile_count = args.x_tiles
+y_tile_count = args.y_tiles
 
-if not (args.bg ^ args.sprite):
-    print("Must select EITHER  background or sprite mode. Not both or none. Try again :(")
+if not (args.mode == "bg" or  args.mode == "sprite"):
+    print("Mode must be bg or sprite. Try again :(")
     quit(0)
 
 pig_picture()
@@ -262,13 +267,17 @@ image = cv2.imread(image_path)
 
 img_map, pal, pal_rev = generate_map(image)
 draw_palette(pal)
-tile_map, tiles = generate_tiles(img_map, pal_rev)
+tile_map, tiles, sprite_tiles = generate_tiles(img_map, pal_rev)
 
 #temp_count = 0
 #for tile in list(tiles.keys()):
 #    print(temp_count)
 #    draw_tile(tile, pal_rev)
-tile_count = write_tile_data(tiles, out_path, filename)
+if args.mode == "bg":
+    tile_count = write_tile_data(tiles, out_path, filename)
+else: # sprite
+    tile_count = write_tile_data(sprite_tiles, out_path, filename)
+
 write_tile_map(tile_map, out_path, x_tile_count, y_tile_count, filename)
 write_palette(pal, out_path, filename)
 
